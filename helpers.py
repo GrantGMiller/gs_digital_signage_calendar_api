@@ -56,9 +56,9 @@ class PlayerManager:
 
     @staticmethod
     def FileExistsInMemory(filename):
-        for filepath in File.ListDirWithSub():
-            if filename == filepath.split('/')[-1]:
-                return filepath
+        for path in File.ListDirWithSub():
+            if filename == path.split('/')[-1]:
+                return path
 
         return False
 

@@ -1,5 +1,5 @@
 import devices
-from extronlib_pro import Button, Level, Label, event, Timer
+from extronlib_pro import Button, Level, Label, event, Timer, Wait
 from scrolling_table import ScrollingTable
 import ui_menu_serviceaccount
 import ui_menu_calendar
@@ -10,6 +10,9 @@ from version import VERSION
 from persistent_variables import PersistentVariables
 
 pv = PersistentVariables('ui.json')
+
+
+# save data like {str(playerIP): str(calendar), ...}
 
 
 def Setup(tlp):
@@ -76,10 +79,11 @@ def Setup(tlp):
 
     @event(btnMenu, ['Tapped', 'Held'])
     def BtnMenuEvent(button, state):
+        print('BtnMenuEvent(', button.ID, state)
         if state == 'Tapped':
-            btnMenu.ShowPopup('Menu')
+            tlp.ShowPopup('Menu')
         elif state == 'Held':
-            UpdateMainPage()
+            Wait(0, UpdateMainPage)
 
     Button(tlp, 17103).HidePopup('Menu')
 
@@ -130,12 +134,13 @@ def Setup(tlp):
     def MainTableTouchEvent(table, cell):
         if cell.GetHeader() == 'Calendar':
             def CalendarSelected(input, value, passthru=None):
+                print('CalendarSelected(', value, passthru)
                 impersonation = value
-                pv.SetItem('link', impersonation, cell.GetRowData()['Player IP'])
+                pv.SetItem('link', cell.GetRowData()['Player IP'], impersonation)
                 UpdateMainPage()
 
             userInput.GetList(
-                options=[calendar for _, calendar in ui_menu_calendar.Get().items()],  # list()
+                options=list(ui_menu_calendar.Get().keys()),  # list()
                 callback=CalendarSelected,
                 # function - should take 2 params, the UserInput instance and the value the user submitted
                 feedback_btn=None,  # the button that the user's selection will be .SetText() to
@@ -150,10 +155,13 @@ def Setup(tlp):
             )
 
     def SetStatusCell(cell):
+        print('SetStatusCell(cell=', cell)
         # Set the color
-        if cell.button.Text == 'Connected':
+        connectionStatus = cell.button.Text
+        if connectionStatus == 'Connected':
             cell.button.SetState(1)  # GREEN
-        elif cell.button.Text == 'Disconnected':
+
+        elif connectionStatus == 'Disconnected':
             cell.button.SetState(0)  # RED
 
         cell.button.SetText('')
@@ -173,18 +181,26 @@ def Setup(tlp):
                 {'Player IP': player.IPAddress},
                 {
                     'Status': player.GetConnectionStatus(),
-                    'File': player.GetCurrentPlayingFile(),
+                    'File': player.GetCurrentPlayingFile() or '',
                 }
             )
 
-        for impersonation, ip in pv.Get('link', {}).items():
+        for ip, impersonation in pv.Get('link', {}).items():
             print('impersonation=', impersonation, ', ip=', ip)
             mainTable.UpdateRowData(
                 {'Player IP': ip},
                 {'Calendar': impersonation},
             )
 
-        SyncCalendarsAndPlayers()
+        SyncCalendarsAndPlayers(progressCallback=MainPageProgress)
+
+    def MainPageProgress(playerProgress):
+        print('MainPageProgress(', playerProgress)
+        for playerIP, percent in playerProgress.items():
+            mainTable.UpdateRowData(
+                {'Player IP': playerIP},
+                {'File': 'Transferring file ' + str(percent) + '%'}
+            )
 
     timerMainPage = Timer(60, UpdateMainPage)
 
@@ -269,4 +285,4 @@ def Setup(tlp):
 
     # INIT ####################################################################
     tlp.HideAllPopups()
-    UpdateMainPage()
+    Wait(0, UpdateMainPage)

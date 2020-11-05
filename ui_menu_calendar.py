@@ -9,7 +9,7 @@ pv = PersistentVariables('calendars.json')
 
 
 # store data like:
-# {str(oauthID): str(impersonationEmail), ...}
+# { str(impersonationEmail):str(oauthID):, ...}
 
 def Setup(tlp, menuTable, input, showMessageCallback, changeCallback):
     menuTable.AddNewRowData({'Option': ADD_CALENDAR})
@@ -60,7 +60,7 @@ def Setup(tlp, menuTable, input, showMessageCallback, changeCallback):
                     'Room\n"{}"\nhas been added.'.format(value),
                     timeout=5,
                 )
-                pv.Set(user.ID, impersonation)
+                pv.Set(impersonation, user.ID)
 
             tlp.HideAllPopups()
             input.GetKeyboard(

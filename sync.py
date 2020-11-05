@@ -7,12 +7,27 @@ from extronlib_pro import File, ProgramLog
 
 DIR_MEDIA = '/media/'
 
+SYNC_IN_PROGRESS = False
 
-def SyncCalendarsAndPlayers():
+
+def SyncCalendarsAndPlayers(progressCallback=None):
+    # progressCallback should accept a dict like {str(player.IPAddress): int(percent)}
+    print('SyncCalendarsAndPlayers()')
+    global SYNC_IN_PROGRESS
+    if SYNC_IN_PROGRESS:
+        print('Cancelled because SYNC_IN_PROGRESS == True')
+        return
+
+    def ProgressCallback(percent):
+        print('ProgressCallback(', percent)
+        if progressCallback:
+            progressCallback({player.IPAddress: percent})
+
+    SYNC_IN_PROGRESS = True
     for player in devices.manager.Players:
         try:
             calendar = None
-            for impersonation, ip in ui.pv.Get('link', {}).items():
+            for ip, impersonation in ui.pv.Get('link', {}).items():
                 if ip == player.IPAddress:
                     calendar = impersonation
                     break
@@ -29,15 +44,16 @@ def SyncCalendarsAndPlayers():
 
                             print('save the file to the IPCP')
                             if devices.manager.FileExistsInMemory(attach.Name):
-                                print('the file name exist on IPCP, assuming its the right file.')
-                                print('Dont want to download the whole file to make sure')
+                                print('the file name exist on IPCP')
 
-                                # if len(attach.Read()) != File(path).SizeOf():
-                                #     print('File on IPCP is the wrong size, overwrite it now')
-                                #     with File(path, 'wb') as file:
-                                #         file.write(attach.Read())
-                                # else:
-                                #     print('The file is on the IPCP and is the right size.')
+                                # if len(attach.Size) != File(path).SizeOf():
+                                if File(path).SizeOf() == 0:
+                                    print('File size is 0, this is no good')
+                                    print('File on IPCP is the wrong size, overwrite it now')
+                                    with File(path, 'wb') as file:
+                                        file.write(attach.Read())
+                                else:
+                                    print('The file is on the IPCP and is the right size.')
                             else:
                                 print('The file does not exist on the IPCP, write it there now')
                                 with File(path, 'wb') as file:
@@ -51,13 +67,14 @@ def SyncCalendarsAndPlayers():
                                     print('The file on player is the wrong size, delete it')
                                     player.DeleteFile(attach.Name)
                                     print('file deleted, load new file to player')
-                                    player.LoadFileToMemory(path)
+
+                                    player.LoadFileToMemory(path, progressCallback=ProgressCallback)
                                 else:
                                     print('The file size matches on player and IPCP')
 
                             else:
                                 print('File {} does not exists in player memory. Load it now.'.format(attach.Name))
-                                player.LoadFileToMemory(path)
+                                player.LoadFileToMemory(path, progressCallback=ProgressCallback)
 
                             player.PlayFile(attach.Name)
                             break
@@ -72,12 +89,14 @@ def SyncCalendarsAndPlayers():
         except Exception as e:
             print('Exception 26:', e)
             ProgramLog(e)
-            raise e
+            # raise e
+
+    SYNC_IN_PROGRESS = False
 
 
 def GetEWS(impersonation):
     ID = None
-    for theID, theEmail in ui_menu_calendar.Get().items():
+    for theEmail, theID in ui_menu_calendar.Get().items():
         if impersonation == theEmail:
             ID = theID
             break
@@ -98,6 +117,6 @@ def GetEWS(impersonation):
         impersonation=impersonation,
         oauthCallback=user.GetAcessToken,
         authType='Oauth',
-        debug=True,
+        debug=False,
     )
     return ews
