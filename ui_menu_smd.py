@@ -1,3 +1,5 @@
+import time
+
 from extronlib_pro import Wait, event, Button
 from persistent_variables import PersistentVariables
 import aes_tools
@@ -16,10 +18,11 @@ def Setup(tlp, menuTable, userInput, generalTable, showMessageCallback, smdChang
     menuTable.AddNewRowData({'Option': PLAYERS})
     menuTable.SortByColumnName('Option')
 
-    oldCallback = menuTable.CellReleased
+    oldCallback = menuTable.CellTapped
 
-    @event(menuTable, 'CellReleased')
+    @event(menuTable, 'CellTapped')
     def MenuTableEvent(t, cell):
+        print('ui_menu_smd', t, cell)
         if oldCallback:
             oldCallback(t, cell)
 
@@ -82,7 +85,7 @@ def Setup(tlp, menuTable, userInput, generalTable, showMessageCallback, smdChang
                     disableKeyCallback=False,  # temporarily disable the keyCallback
                 )
 
-            generalTable.ClearAllData()
+            generalTable.ClearAllData(forceRefresh=True)
             generalTable.SetTableHeaderOrder(['IP Address', 'Status'])
             for player in devices.manager.Players:
                 generalTable.AddNewRowData({
@@ -92,6 +95,9 @@ def Setup(tlp, menuTable, userInput, generalTable, showMessageCallback, smdChang
 
             tlp.ShowPopup('Table')
             tlp.HidePopup('Menu')
+
+    print('ui_menu_smd', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
+    time.sleep(1)
 
 
 def AutoDiscoverSMDs():
@@ -106,6 +112,5 @@ def AutoDiscoverSMDs():
         pv.Append('found_smds', ip, allowDuplicates=False)
 
     FindAllSMDs(startIP, endIP, FoundSMDCallack)
-
 
 # Wait(0, AutoDiscoverSMDs)

@@ -2,7 +2,7 @@ import time
 from persistent_variables import PersistentVariables
 import gs_tools
 from extronlib_pro import event, Label, Button, Wait
-from oauth_tools import AuthManager
+from gs_oauth_tools import AuthManager
 import ui_menu_settings
 
 SERVICE_ACCOUNT = 'Service Accounts'
@@ -28,10 +28,11 @@ def Setup(tlp_, menuTable, input_, table_, showMessageCallback_, changeCallback_
     menuTable.AddNewRowData({'Option': SERVICE_ACCOUNT})
     menuTable.SortByColumnName('Option')
 
-    oldCallback = menuTable.CellReleased
+    oldCallback = menuTable.CellTapped
 
-    @event(menuTable, 'CellReleased')
+    @event(menuTable, 'CellTapped')
     def MenuTableEvent(t, cell):
+        print('ui_menu_serviceaccount MenuTableEvent(', t, cell)
         if oldCallback:
             oldCallback(t, cell)
 
@@ -45,7 +46,7 @@ def Setup(tlp_, menuTable, input_, table_, showMessageCallback_, changeCallback_
 
             table.SetTableHeaderOrder(['Email', 'Status'])
 
-            table.ClearAllData()
+            table.ClearAllData(forceRefresh=True)
             for ID, email in GetServiceAccounts().items():
                 table.AddNewRowData(
                     {'Email': email, 'ID': ID}
@@ -89,6 +90,9 @@ def Setup(tlp_, menuTable, input_, table_, showMessageCallback_, changeCallback_
             tlp.ShowPopup('Table')
             tlp.HidePopup('Menu')
 
+    print('ui_menu_serviceaccount', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
+    time.sleep(1)
+
 
 def AddServiceAccount():
     if not (ui_menu_settings.Get(ui_menu_settings.TENANT_ID, None) and ui_menu_settings.Get(
@@ -110,6 +114,7 @@ def AddServiceAccount():
         authManager = AuthManager(
             microsoftClientID=ui_menu_settings.Get('Client ID'),
             microsoftTenantID=ui_menu_settings.Get('Tenant ID'),
+            googleJSONpath='google.json',
             debug=False,
         )
     except Exception as e:

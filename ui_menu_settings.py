@@ -1,3 +1,5 @@
+import time
+
 from extronlib_pro import event
 from persistent_variables import PersistentVariables
 from pin import VerifyPin
@@ -35,12 +37,13 @@ def Setup(tlp, menuTable, table, input, changeCallback, showMessageCallback):
     menuTable.AddNewRowData({'Option': SETTINGS})
     menuTable.SortByColumnName('Option')
 
-    oldCallback = menuTable.CellReleased
+    oldCallback = menuTable.CellTapped
 
     @event(menuTable, 'CellReleased')
-    def MenuTableEvent(_, cell):
+    def MenuTableEvent(t, cell):
+        print('ui_menu_settings', t, cell)
         if oldCallback:
-            oldCallback(table, cell)
+            oldCallback(t, cell)
 
         if cell.GetValue() == SETTINGS:
             @VerifyPin(input)
@@ -56,7 +59,7 @@ def Setup(tlp, menuTable, table, input, changeCallback, showMessageCallback):
                 tlp.ShowPopup('Table')
                 table.HideEmptyRows(True)
 
-                table.ClearAllData()
+                table.ClearAllData(forceRefresh=True)
                 table.SetTableHeaderOrder([
                     'Setting',
                     'Value',
@@ -99,6 +102,9 @@ def Setup(tlp, menuTable, table, input, changeCallback, showMessageCallback):
                             )
 
             tlp.HidePopup('Menu')
+
+    print('ui_menu_settings', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
+    time.sleep(1)
 
 
 def Get(*a, **k):

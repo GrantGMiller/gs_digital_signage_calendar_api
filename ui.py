@@ -1,4 +1,7 @@
+import datetime
+
 import devices
+import ui_menu_fullscreen
 from extronlib_pro import Button, Level, Label, event, Timer, Wait
 from scrolling_table import ScrollingTable
 import ui_menu_serviceaccount
@@ -24,6 +27,8 @@ def Setup(tlp):
         tlp.SetText(13000, title)
         tlp.SetText(13001, body)
         tlp.ShowPopup('Message', timeout)
+
+    ShowMessage('Loading', 'Please Wait')
 
     userInput = UserInputClass(tlp)  # a helper to get various inputs from the user like strings, numbers, ip addresses
     userInput.SetupKeyboard(
@@ -115,29 +120,56 @@ def Setup(tlp):
     ])
 
     for row in range(0, 8 + 1):
-        tlp.SetVisible(10000 + row, False)
-        tlp.SetVisible(10100 + row, False)
-        tlp.SetVisible(10200 + row, False)
-        tlp.SetVisible(10400 + row, False)
 
         mainTable.RegisterRowButtons(
             row,
-            Button(tlp, 10000 + row, PressFeedback='State'),
-            Button(tlp, 10100 + row, PressFeedback='State'),
-            Button(tlp, 10200 + row, PressFeedback='State'),
-            Button(tlp, 10400 + row, PressFeedback='State'),
+            Button(tlp, 10000 + row, PressFeedback='State', holdTime=1),
+            Button(tlp, 10100 + row, PressFeedback='State', holdTime=1),
+            Button(tlp, 10200 + row, PressFeedback='State', holdTime=1),
+            Button(tlp, 10400 + row, PressFeedback='State', holdTime=1),
         )
 
     mainTable.HideEmptyRows(True)
 
-    @event(mainTable, 'CellReleased')
+    @event(mainTable, 'CellHeld')
+    def MainTableHeldEvent(table, cell):
+        print('MainTableHeldEvent CellHeld (', table, cell)
+
+        def DeltePlayer(input, value, passthru=None):
+            playerIP = passthru
+            if value:
+                mainTable.DeleteRow({'Player IP': playerIP})
+                pv.PopItem('link', playerIP)
+
+        playerIP = cell.GetRowData()['Player IP']
+
+        userInput.GetBoolean(
+            callback=DeltePlayer,
+            # function - should take 2 params, the UserInput instance and the value the user submitted
+            feedback_btn=None,
+            passthru=playerIP,  # any object that you want to also come thru the callback
+            message='Delete the player "{}" ?'.format(playerIP),
+            long_message=None,
+            true_message='Delete this player',
+            false_message=None,
+            true_text='Yes',
+            false_text='Cancel',
+        )
+
+    @event(mainTable, 'CellPressed')
+    def MainTableCellPressedEvent(table, cell):
+        print('MainTableCellPressedEvent(', table, cell)
+
+    @event(mainTable, 'CellTapped')
     def MainTableTouchEvent(table, cell):
+        print('MainTableTouchEvent CellTapped (', table, cell)
+
         if cell.GetHeader() == 'Calendar':
             def CalendarSelected(input, value, passthru=None):
                 print('CalendarSelected(', value, passthru)
                 impersonation = value
                 pv.SetItem('link', cell.GetRowData()['Player IP'], impersonation)
-                UpdateMainPage()
+                Wait(0, UpdateMainPage)
 
             userInput.GetList(
                 options=list(ui_menu_calendar.Get().keys()),  # list()
@@ -193,6 +225,7 @@ def Setup(tlp):
             )
 
         SyncCalendarsAndPlayers(progressCallback=MainPageProgress)
+        tlp.SetText(11002, datetime.datetime.now().strftime('%H:%M %p'))
 
     def MainPageProgress(playerProgress):
         print('MainPageProgress(', playerProgress)
@@ -257,7 +290,7 @@ def Setup(tlp):
     for row in range(0, 6 + 1):
         menuTable.RegisterRowButtons(
             row,
-            Button(tlp, 17000 + row, PressFeedback='State'),
+            Button(tlp, 17000 + row, PressFeedback='State', holdTime=1),
         )
     menuTable.SetTableHeaderOrder(['Option'])
 
@@ -280,9 +313,15 @@ def Setup(tlp):
 
     ui_menu_smd.Setup(tlp, menuTable, userInput, generalTable, ShowMessage, SMDChangeCallback)
 
+    ui_menu_fullscreen.Setup(tlp, menuTable)
+
+    # Popup: Fullscreen Preview ###############################################
+    Button(tlp, 19908).HidePopup('Fullscreen Preview')
+
     # Popup: Add Service Account ##############################################
     Button(tlp, 12003, PressFeedback='State').HidePopup('Add Service Account')
 
     # INIT ####################################################################
     tlp.HideAllPopups()
     Wait(0, UpdateMainPage)
+    print('end ui.py')

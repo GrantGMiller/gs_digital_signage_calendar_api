@@ -7,7 +7,7 @@ try:
 
 except Exception as e:
     if 'Fake' in e.args:
-        # raise e
+        raise e
         pass
 
 import devices

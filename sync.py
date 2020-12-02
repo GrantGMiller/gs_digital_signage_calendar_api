@@ -109,6 +109,7 @@ def GetEWS(impersonation):
 
     if not impersonation:
         raise ValueError('Missing impersonation account "{}"'.format(impersonation))
+
     if not serviceAccount:
         raise ValueError('Missing service account "{}"'.format(serviceAccount))
 

@@ -1,3 +1,5 @@
+import time
+
 from extronlib_pro import event
 import ui_menu_serviceaccount
 from persistent_variables import PersistentVariables
@@ -15,10 +17,11 @@ def Setup(tlp, menuTable, input, showMessageCallback, changeCallback):
     menuTable.AddNewRowData({'Option': ADD_CALENDAR})
     menuTable.SortByColumnName('Option')
 
-    oldCallback = menuTable.CellReleased
+    oldCallback = menuTable.CellTapped
 
-    @event(menuTable, 'CellReleased')
+    @event(menuTable, 'CellTapped')
     def MenuTableEvent(table, cell):
+        print('ui_menu_calendar MenuTableEvent(', table, cell)
         if oldCallback:
             oldCallback(table, cell)
 
@@ -69,6 +72,9 @@ def Setup(tlp, menuTable, input, showMessageCallback, changeCallback):
                 callback=SaveRoom,
             )
             input.SetKeyboardText(value)
+
+    print('ui_menu_calendar', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
+    time.sleep(1)
 
 
 def Get(*a, **k):
