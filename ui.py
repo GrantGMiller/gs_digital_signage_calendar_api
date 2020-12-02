@@ -120,7 +120,6 @@ def Setup(tlp):
     ])
 
     for row in range(0, 8 + 1):
-
         mainTable.RegisterRowButtons(
             row,
             Button(tlp, 10000 + row, PressFeedback='State', holdTime=1),
@@ -128,6 +127,7 @@ def Setup(tlp):
             Button(tlp, 10200 + row, PressFeedback='State', holdTime=1),
             Button(tlp, 10400 + row, PressFeedback='State', holdTime=1),
         )
+        tlp.SetVisible(10000 + row, False)
 
     mainTable.HideEmptyRows(True)
 
@@ -139,7 +139,8 @@ def Setup(tlp):
             playerIP = passthru
             if value:
                 mainTable.DeleteRow({'Player IP': playerIP})
-                pv.PopItem('link', playerIP)
+                pv.PopItem('link', playerIP, None)
+                devices.manager.DeletePlayer(playerIP=playerIP)
 
         playerIP = cell.GetRowData()['Player IP']
 
@@ -164,7 +165,7 @@ def Setup(tlp):
     def MainTableTouchEvent(table, cell):
         print('MainTableTouchEvent CellTapped (', table, cell)
 
-        if cell.GetHeader() == 'Calendar':
+        if cell.GetHeader() == 'Calendar' and cell.GetRowData()['Player IP']:
             def CalendarSelected(input, value, passthru=None):
                 print('CalendarSelected(', value, passthru)
                 impersonation = value
@@ -202,6 +203,7 @@ def Setup(tlp):
 
     def UpdateMainPage(*a, **k):
         print('UpdateMainPage(', a, k)
+
         for player in devices.manager.Players:
             print('player=', player)
             if not mainTable.has_row({'Player IP': player.IPAddress}):

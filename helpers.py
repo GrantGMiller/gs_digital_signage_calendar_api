@@ -78,15 +78,25 @@ class PlayerManager:
             player.GetPlainPassword(),
         )
 
-    def DeletePlayer(self, playerMAC):
+    def DeletePlayer(self, playerMAC=None, playerIP=None, player=None):
         print('DeletePlayer(', playerMAC)
-        for player in self._players.copy():
-            if player.MACAddress == playerMAC:
-                self._players.remove(player)
+
+        if playerIP is None and playerMAC is None and player is None:
+            raise ValueError('You must pass keyword "playerMAC" or "playerIP" or "player"')
+
+        for thisPlayer in self._players.copy():
+            if playerMAC and thisPlayer.MACAddress == playerMAC:
+                self.DeletePlayer(player=thisPlayer)
+
+            elif playerIP and playerIP == thisPlayer.IPAddress:
+                self.DeletePlayer(player=thisPlayer)
+
+            elif player and player == thisPlayer:
+                self._players.remove(thisPlayer)
 
                 self._pv.PopItem(
                     'players',
-                    player.IPAddress,
+                    thisPlayer.IPAddress,
                 )
 
     def GetPlayerFromMAC(self, playerMAC):

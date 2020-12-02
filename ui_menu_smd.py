@@ -85,8 +85,9 @@ def Setup(tlp, menuTable, userInput, generalTable, showMessageCallback, smdChang
                     disableKeyCallback=False,  # temporarily disable the keyCallback
                 )
 
-            generalTable.ClearAllData(forceRefresh=True)
             generalTable.SetTableHeaderOrder(['IP Address', 'Status'])
+            generalTable.ClearAllData(forceRefresh=True)
+
             for player in devices.manager.Players:
                 generalTable.AddNewRowData({
                     'IP Address': player.IPAddress,
@@ -95,9 +96,6 @@ def Setup(tlp, menuTable, userInput, generalTable, showMessageCallback, smdChang
 
             tlp.ShowPopup('Table')
             tlp.HidePopup('Menu')
-
-    print('ui_menu_smd', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
-    time.sleep(1)
 
 
 def AutoDiscoverSMDs():
