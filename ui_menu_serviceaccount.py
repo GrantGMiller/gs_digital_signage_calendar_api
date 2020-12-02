@@ -47,6 +47,7 @@ def Setup(tlp_, menuTable, input_, table_, showMessageCallback_, changeCallback_
             table.SetTableHeaderOrder(['Email', 'Status'])
 
             table.ClearAllData(forceRefresh=True)
+
             for ID, email in GetServiceAccounts().items():
                 table.AddNewRowData(
                     {'Email': email, 'ID': ID}
@@ -89,9 +90,6 @@ def Setup(tlp_, menuTable, input_, table_, showMessageCallback_, changeCallback_
 
             tlp.ShowPopup('Table')
             tlp.HidePopup('Menu')
-
-    print('ui_menu_serviceaccount', oldCallback.__module__ if oldCallback else 'None', 'oldCallback=', oldCallback)
-    time.sleep(1)
 
 
 def AddServiceAccount():
